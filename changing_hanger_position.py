@@ -16,16 +16,26 @@ front_rotation_count=0
 back_rotation_count=0
 forward_rotation_count=0
 backward_rotation_count=0
-origional_movement_count=0
+origional_movement_count_first=0
+origional_movement_count_second=0
+origional_movement_count_third=0
+origional_movement_count_fourth=0
+origional_movement_count_fifth=0
+origional_movement_count_sixth=0
 origional_cloth_location=bpy.data.objects['Cloth_2'].location[0] #0.32598134875297546
 
 
 
 def my_handler_rotation_origional(scene):
-    global origional_movement_count
+    global origional_movement_count_first
+    global origional_movement_count_second
+    global origional_movement_count_third
+    global origional_movement_count_fourth
+    global origional_movement_count_fifth
+    global origional_movement_count_sixth
     global origional_cloth_location
-    origional_location_step=0.1
-    rounds=6
+    rotation_step=0.2
+    rounds=3
     paus=50
     if bpy.context.scene.frame_current ==paus-1:
         bpy.ops.screen.animation_cancel()
@@ -36,28 +46,88 @@ def my_handler_rotation_origional(scene):
             bpy.context.scene.frame_set(frames)
             for ob in bpy.context.scene.objects:
                 if ob.type == 'CAMERA':
-                    for energy in np.arange(0.2,0.6,0.2):
+                    for energy in np.arange(0.2,0.3,0.2):
                         bpy.data.lights['Sun'].energy=energy
                         print('energy',energy)
                         bpy.context.scene.camera = ob
-                        bpy.context.scene.render.filepath = './DataCollection/'+ '-origional'+'-location'+str(bpy.data.objects['Cloth_2'].location[0])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
-                        print()
-                        bpy.ops.render.render(use_viewport=False, write_still=True)
+                        #bpy.context.scene.render.filepath = './DataCollection/'+ '-origional'+'-location'+str(bpy.data.objects['Cloth_2'].location[0])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
+                        #bpy.ops.render.render(use_viewport=False, write_still=True)
 
 
         bpy.context.scene.frame_set(0)
-        if origional_movement_count==rounds+1 :
-            origional_cloth_location=bpy.data.objects['Cloth_2'].location[0]
-            bpy.context.scene.frame_set(0)
-        if origional_movement_count<rounds:
-            bpy.data.objects['Cloth_2'].location[0]+=origional_location_step
-            origional_movement_count +=1
+        if origional_movement_count_first==rounds+1 :
+            if origional_movement_count_second==rounds+1:
+                if origional_movement_count_third==rounds+1:
+                    if origional_movement_count_fourth==rounds+1:
+                        if origional_movement_count_fifth==rounds+1:
+
+                            if origional_movement_count_sixth<rounds:
+                                #change the front
+                                bpy.data.objects['Cloth_2'].rotation_euler[0]+=rotation_step
+                                bpy.data.objects['hanger_2'].rotation_euler[0]+=rotation_step
+                                origional_movement_count_sixth+=1
+                                run_and_stop_animation_rotation_origional()
+                            if origional_movement_count_sixth==rounds:
+                                bpy.data.objects['Cloth_2'].rotation_euler[0]+=-(rotation_step*rounds)
+                                bpy.data.objects['hanger_2'].rotation_euler[0]+=-(rotation_step*rounds)
+                                origional_movement_count_sixth+=1
+
+                        if origional_movement_count_fifth<rounds:
+                            #change the back
+                            bpy.data.objects['Cloth_2'].rotation_euler[0]+=-rotation_step
+                            bpy.data.objects['hanger_2'].rotation_euler[0]+=-rotation_step
+                            origional_movement_count_fifth+=1
+                            run_and_stop_animation_rotation_origional()
+                        if origional_movement_count_fifth==rounds:
+                            bpy.data.objects['Cloth_2'].rotation_euler[0]+=(rotation_step*rounds)
+                            bpy.data.objects['hanger_2'].rotation_euler[0]+=(rotation_step*rounds)
+                            origional_movement_count_fifth+=1
+
+                    if origional_movement_count_fourth<rounds:
+                        #change the left
+                        bpy.data.objects['Cloth_2'].rotation_euler[1]+=-rotation_step
+                        bpy.data.objects['hanger_2'].rotation_euler[1]+=-rotation_step
+                        origional_movement_count_fourth+=1
+                        run_and_stop_animation_rotation_origional()
+                    if origional_movement_count_fourth==rounds:
+                        bpy.data.objects['Cloth_2'].rotation_euler[1]+=(rotation_step*rounds)
+                        bpy.data.objects['hanger_2'].rotation_euler[1]+=(rotation_step*rounds)
+                        origional_movement_count_fourth+=1
+
+                if origional_movement_count_third<rounds:
+                    #change the right
+                    bpy.data.objects['Cloth_2'].rotation_euler[1]+=rotation_step
+                    bpy.data.objects['hanger_2'].rotation_euler[1]+=rotation_step
+                    origional_movement_count_third +=1
+                    run_and_stop_animation_rotation_origional()
+                if origional_movement_count_third==rounds:
+                    bpy.data.objects['Cloth_2'].rotation_euler[1]+=-(rotation_step*rounds)
+                    bpy.data.objects['hanger_2'].rotation_euler[1]+=-(rotation_step*rounds)
+                    origional_movement_count_third +=1
+
+
+            if origional_movement_count_second<rounds:
+                #change the backward
+                bpy.data.objects['Cloth_2'].rotation_euler[2]+=-rotation_step
+                bpy.data.objects['hanger_2'].rotation_euler[2]+=-rotation_step
+                origional_movement_count_second +=1
+                run_and_stop_animation_rotation_origional()
+            if origional_movement_count_second==rounds:
+                bpy.data.objects['Cloth_2'].rotation_euler[2]+=(rotation_step*rounds)
+                bpy.data.objects['hanger_2'].rotation_euler[2]+=(rotation_step*rounds)
+                origional_movement_count_second +=1
+
+
+        if origional_movement_count_first<rounds:
+            #change the forward
+            bpy.data.objects['Cloth_2'].rotation_euler[2]+=rotation_step
+            bpy.data.objects['hanger_2'].rotation_euler[2]+=rotation_step
+            origional_movement_count_first +=1
             run_and_stop_animation_rotation_origional()
-        if origional_movement_count==rounds:
-            if bpy.data.objects['Cloth_2'].location[0] != origional_cloth_location:
-                origional_movement_count=0
-            elif bpy.data.objects['Cloth_2'].location[0] == origional_cloth_location:
-                origional_movement_count=rounds+1
+        if origional_movement_count_first==rounds:
+            bpy.data.objects['Cloth_2'].rotation_euler[2]+=-(rotation_step*rounds)
+            bpy.data.objects['hanger_2'].rotation_euler[2]+=-(rotation_step*rounds)
+            origional_movement_count_first=rounds+1
 
 
 
@@ -97,14 +167,13 @@ def my_handler_rotation_forward(scene):
                         bpy.ops.render.render(use_viewport=False, write_still=True)
 
 
-
+        bpy.context.scene.frame_set(0)
         if forward_rotation_count==rounds+1 :
             origional_cloth_location=bpy.data.objects['Cloth_2'].location[0]
             print('now start origional rotation'  )
             bpy.context.scene.frame_set(0)
-            bpy.data.objects['Cloth_2'].location[0]+=-0.6
             run_and_stop_animation_rotation_origional()
-        bpy.context.scene.frame_set(0)
+
         if forward_rotation_count<rounds:
             print('changing')
             bpy.data.objects['Cloth_2'].rotation_euler[2]+=rotation_step
@@ -143,7 +212,6 @@ def my_handler_rotation_backward(scene):
     global backward_rotation_count
     global origional_cloth_location
     rotation_step=0.2
-    #backward_location_step=0.1
     rounds=3
     paus=50
     if bpy.context.scene.frame_current ==paus-1:
@@ -163,27 +231,24 @@ def my_handler_rotation_backward(scene):
                         bpy.ops.render.render(use_viewport=False, write_still=True)
 
 
-
+        bpy.context.scene.frame_set(0)
         if backward_rotation_count==rounds+1 :
             origional_cloth_location=bpy.data.objects['Cloth_2'].location[0]
             print('now start backward rotaion'  )
             bpy.context.scene.frame_set(0)
             bpy.data.objects['Cloth_2'].location[0]+=-0.6
             run_and_stop_animation_rotation_forward()
-        bpy.context.scene.frame_set(0)
+
         if backward_rotation_count<rounds:
             print('changing')
             bpy.data.objects['Cloth_2'].rotation_euler[2]+=-rotation_step
             bpy.data.objects['hanger_2'].rotation_euler[2]+=-rotation_step
             backward_rotation_count +=1
-            #print('vaues',bpy.data.objects['Cloth_2'].rotation_euler[2],bpy.data.objects['hanger_2'].rotation_euler[2])
             run_and_stop_animation_rotation_backward()
         if backward_rotation_count==rounds:
             print('back to origionals')
             bpy.data.objects['Cloth_2'].rotation_euler[2]+=(rotation_step*rounds)
             bpy.data.objects['hanger_2'].rotation_euler[2]+=(rotation_step*rounds)
-            #bpy.data.objects['hanger_2'].rotation_euler[2]+=(rotation_step*rounds)
-            #bpy.data.objects['Cloth_2'].location[0]+=backward_location_step
             if bpy.data.objects['Cloth_2'].location[0] != origional_cloth_location:
                 backward_rotation_count=0
             elif bpy.data.objects['Cloth_2'].location[0] == origional_cloth_location:
@@ -229,7 +294,7 @@ def my_handler_rotation_back(scene):
                         bpy.ops.render.render(use_viewport=False, write_still=True)
 
 
-
+        bpy.context.scene.frame_set(0)
         if back_rotation_count==rounds+1 :
             origional_cloth_location=bpy.data.objects['Cloth_2'].location[0]
             print('now start back rotaion'  )
@@ -237,7 +302,8 @@ def my_handler_rotation_back(scene):
             #this stupid backward started collisions so basically no need to slide the cloth on the hanger, simply rotate it on origional location[0]
             bpy.data.objects['Cloth_2'].location[0]=origional_cloth_location
             run_and_stop_animation_rotation_backward()
-        bpy.context.scene.frame_set(0)
+
+
         if back_rotation_count<rounds:
             print('changing')
             bpy.data.objects['Cloth_2'].rotation_euler[0]+=-rotation_step
@@ -293,14 +359,13 @@ def my_handler_rotation_front(scene):
                         bpy.ops.render.render(use_viewport=False, write_still=True)
 
 
-
+        bpy.context.scene.frame_set(0)
         if front_rotation_count==rounds+1 :
             origional_cloth_location=bpy.data.objects['Cloth_2'].location[0]
             print('now start back rotaion'  )
             bpy.context.scene.frame_set(0)
             bpy.data.objects['Cloth_2'].location[0]+=-0.6
             run_and_stop_animation_rotation_back()
-        bpy.context.scene.frame_set(0)
         if front_rotation_count<rounds:
             print('changing')
             bpy.data.objects['Cloth_2'].rotation_euler[0]+=rotation_step
@@ -354,13 +419,14 @@ def my_handler_rotation_left(scene):
                         bpy.context.scene.camera = ob
                         bpy.context.scene.render.filepath = './DataCollection/'+ '-leftRotation'+str(left_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[0])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
                         bpy.ops.render.render(use_viewport=False, write_still=True)
+
+        bpy.context.scene.frame_set(0)
         if left_rotation_count==rounds+1 :
             origional_cloth_location=bpy.data.objects['Cloth_2'].location[0]
             print('now start front rotaion'  )
             bpy.context.scene.frame_set(0)
             bpy.data.objects['Cloth_2'].location[0]+=-0.6
             run_and_stop_animation_rotation_front()
-        bpy.context.scene.frame_set(0)
         if left_rotation_count<rounds:
             print('changing')
             bpy.data.objects['Cloth_2'].rotation_euler[1]+=-rotation_step
@@ -445,8 +511,6 @@ def my_handler_rotation_right(scene):
 
 
         print('Right_rotation_count', Right_rotation_count)
-
-
 
 
 def run_and_stop_animation_rotation_right():
