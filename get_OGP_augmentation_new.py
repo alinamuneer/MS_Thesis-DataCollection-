@@ -86,7 +86,6 @@ def render_and_dataCollection(desired_frame,image_path):
     layer = bpy.context.view_layer
     tmp_obj = transform_obj_to_frame(layer, cloth_object)
     OGP_transform_matrix_global=get_OGP(tmp_obj)
-
     bpy.data.objects.remove(bpy.data.objects['tmpGround'], do_unlink=True)
 
     for ob in scene.objects:

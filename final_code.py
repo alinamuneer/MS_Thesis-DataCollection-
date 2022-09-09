@@ -117,7 +117,7 @@ def my_handler_rotation_origional(scene):
                             'Location': [OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3],OGP_transform_matrix_camera[3][3]]}
                         df = pd.DataFrame(rows)
                         df.to_csv('./DataCollection/OGP_dataset_collection.csv', mode='a', index=False, header=False)
-                        bpy.ops.mesh.primitive_cube_add(size=0.1, location=(OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3]))
+                        #bpy.ops.mesh.primitive_cube_add(size=0.1, location=(OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3]))
                         #bpy.ops.mesh.primitive_cube_add(size=0.1, location=(OGP_transform_matrix_global[0][3], OGP_transform_matrix_global[1][3], OGP_transform_matrix_global[2][3]))
 
 
@@ -595,7 +595,7 @@ def run_and_stop_animation_rotation_right():
 
 print('start'+str(bpy.context.scene.frame_current)    )
 bpy.context.scene.frame_set(0)
-#bpy.data.objects['Cloth_2'].location[0]+=-0.6 #location_step*rounds
-run_and_stop_animation_rotation_origional()
-#run_and_stop_animation_rotation_right()
+bpy.data.objects['Cloth_2'].location[0]+=-0.6 #location_step*rounds
+#run_and_stop_animation_rotation_origional()
+run_and_stop_animation_rotation_right()
 #run_and_stop_animation_rotation_backward()

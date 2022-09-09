@@ -528,7 +528,7 @@ def run_and_stop_animation_rotation_right():
 
 print('start'+str(bpy.context.scene.frame_current)    )
 bpy.context.scene.frame_set(0)
-bpy.data.objects['Cloth_2'].location[0]+=-0.6 #location_step*rounds
-#run_and_stop_animation_rotation_origional()
-run_and_stop_animation_rotation_right()
+#bpy.data.objects['Cloth_2'].location[0]+=-0.6 #location_step*rounds
+run_and_stop_animation_rotation_origional()
+#run_and_stop_animation_rotation_right()
 #run_and_stop_animation_rotation_backward()
