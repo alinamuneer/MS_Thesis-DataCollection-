@@ -8,7 +8,7 @@ import os
 import csv
 import cv2
 import pandas as pd
-
+from scipy.spatial.transform import Rotation as R
 
 Right_rotation_count=0
 left_rotation_count=0
@@ -88,12 +88,16 @@ for ob in bpy.context.scene.objects:
             bpy.ops.render.render(use_viewport=False, write_still=True)
             OGP_transform_matrix_camera=np.matmul(np.linalg.inv(bpy.data.objects[ob.name].matrix_world),OGP_transform_matrix_global)
             bpy.ops.mesh.primitive_cube_add(size=0.005, location=(OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3]))
-            #print(OGP_transform_matrix_global)
             print(OGP_transform_matrix_camera)
-
-
-
-
+            #saved quarternions are x y z w
+            r = R.from_matrix([[ OGP_transform_matrix_camera[0][0], OGP_transform_matrix_camera[1][0], OGP_transform_matrix_camera[2][0]],[OGP_transform_matrix_camera[0][1], OGP_transform_matrix_camera[1][1], OGP_transform_matrix_camera[2][1]],[OGP_transform_matrix_camera[0][2], OGP_transform_matrix_camera[1][2], OGP_transform_matrix_camera[2][2]]])
+            quarternion_array=r.as_quat()
+            rows = ['Image', quarternion_array[0], quarternion_array[1], quarternion_array[2],quarternion_array[3],OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3]]
+            with open('./DataCollection-RED/OGP_dataset_collection_RED.csv', 'a') as csvfile:
+                csvwriter = csv.writer(csvfile)
+                csvwriter.writerow(rows)
+            print(rows)
+            print(r.as_quat())
 
 
 

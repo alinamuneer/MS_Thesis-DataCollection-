@@ -8,7 +8,7 @@ import os
 import csv
 import cv2
 import pandas as pd
-
+from scipy.spatial.transform import Rotation as R
 
 Right_rotation_count=0
 left_rotation_count=0
@@ -81,8 +81,8 @@ def my_handler_rotation_origional(scene):
     global origional_movement_count_sixth
     global origional_cloth_location
     rotation_step=0.1
-    rounds=4
-    paus=30
+    rounds=2
+    paus=35
     if bpy.context.scene.frame_current ==paus-1:
         bpy.ops.screen.animation_cancel()
         bpy.context.scene.frame_current = paus
@@ -99,26 +99,24 @@ def my_handler_rotation_origional(scene):
             bpy.data.objects.remove(bpy.data.objects['tmpGround'], do_unlink=True)
             for ob in bpy.context.scene.objects:
                 if ob.type == 'CAMERA':
-                    for energy in np.arange(0.2,0.3,0.2):
+                    for energy in np.arange(0.5,0.6,0.1):
                         bpy.data.lights['Sun'].energy=energy
                         print('energy',energy)
                         bpy.context.scene.camera = ob
-                        bpy.context.scene.render.filepath = './DataCollection-RED/'+ '-origional'+'rotation'+str(origional_movement_count_first)+str(origional_movement_count_second)+str(origional_movement_count_third)+str(origional_movement_count_fourth)+str(origional_movement_count_fifth)+str(origional_movement_count_sixth)+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
-                        bpy.ops.render.render(use_viewport=False, write_still=True)
+                        #bpy.context.scene.render.filepath = './DataCollection-RED/'+ '-origional'+'rotation'+str(origional_movement_count_first)+str(origional_movement_count_second)+str(origional_movement_count_third)+str(origional_movement_count_fourth)+str(origional_movement_count_fifth)+str(origional_movement_count_sixth)+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
+                        #bpy.ops.render.render(use_viewport=False, write_still=True)
                         dmap = get_depth()
-                        cv2.imwrite('./DataCollection-RED/'+ '-origional'+'rotation'+str(origional_movement_count_first)+str(origional_movement_count_second)+str(origional_movement_count_third)+str(origional_movement_count_fourth)+str(origional_movement_count_fifth)+str(origional_movement_count_sixth)+'-frame'+str(frames) + '-energy'+str(energy)+ob.name +'depth.png', dmap * 255)
+                        #cv2.imwrite('./DataCollection-RED/'+ '-origional'+'rotation'+str(origional_movement_count_first)+str(origional_movement_count_second)+str(origional_movement_count_third)+str(origional_movement_count_fourth)+str(origional_movement_count_fifth)+str(origional_movement_count_sixth)+'-frame'+str(frames) + '-energy'+str(energy)+ob.name +'depth.png', dmap * 255)
                         OGP_transform_matrix_camera=np.matmul(np.linalg.inv(bpy.data.objects[ob.name].matrix_world),OGP_transform_matrix_global)
-                        #print(OGP_transform_matrix_camera)
-                        rows = {
-                            'name': [ 'Image'+'-origional'+'rotation'+str(origional_movement_count_first)+str(origional_movement_count_second)+str(origional_movement_count_third)+str(origional_movement_count_fourth)+str(origional_movement_count_fifth)+str(origional_movement_count_sixth)+'-frame'+str(frames) + '-energy'+str(energy)+ob.name, '', '',''],
-                            'Binormal': [ OGP_transform_matrix_camera[0][0], OGP_transform_matrix_camera[1][0], OGP_transform_matrix_camera[2][0],OGP_transform_matrix_camera[3][0]],
-                            'Normal': [OGP_transform_matrix_camera[0][1], OGP_transform_matrix_camera[1][1], OGP_transform_matrix_camera[2][1],OGP_transform_matrix_camera[3][1]],
-                            'Approach': [OGP_transform_matrix_camera[0][2], OGP_transform_matrix_camera[1][2], OGP_transform_matrix_camera[2][2],OGP_transform_matrix_camera[3][2]],
-                            'Location': [OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3],OGP_transform_matrix_camera[3][3]]}
-                        df = pd.DataFrame(rows)
-                        df.to_csv('./DataCollection-RED/OGP_dataset_collection.csv', mode='a', index=False, header=False)
-                        bpy.ops.mesh.primitive_cube_add(size=0.1, location=(OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3]))
-                        #bpy.ops.mesh.primitive_cube_add(size=0.1, location=(OGP_transform_matrix_global[0][3], OGP_transform_matrix_global[1][3], OGP_transform_matrix_global[2][3]))
+                        #saved quarternions are x y z w
+                        r = R.from_matrix([[ OGP_transform_matrix_camera[0][0], OGP_transform_matrix_camera[1][0], OGP_transform_matrix_camera[2][0]],[OGP_transform_matrix_camera[0][1], OGP_transform_matrix_camera[1][1], OGP_transform_matrix_camera[2][1]],[OGP_transform_matrix_camera[0][2], OGP_transform_matrix_camera[1][2], OGP_transform_matrix_camera[2][2]]])
+                        quarternion_array=r.as_quat()
+                        rows = ['Image'+'-origional'+'rotation'+str(origional_movement_count_first)+str(origional_movement_count_second)+str(origional_movement_count_third)+str(origional_movement_count_fourth)+str(origional_movement_count_fifth)+str(origional_movement_count_sixth)+'-frame'+str(frames) + '-energy'+str(energy)+ob.name, quarternion_array[0], quarternion_array[1], quarternion_array[2],quarternion_array[3],OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3]]
+                        with open('./DataCollection-RED/OGP_dataset_collection_RED.csv', 'a') as csvfile:
+                            csvwriter = csv.writer(csvfile)
+                            csvwriter.writerow(rows)
+                        #bpy.ops.mesh.primitive_cube_add(size=0.1, location=(OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3]))
+
 
 
         bpy.context.scene.frame_set(0)
