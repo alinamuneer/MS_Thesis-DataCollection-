@@ -22,7 +22,8 @@ origional_movement_count_third=0
 origional_movement_count_fourth=0
 origional_movement_count_fifth=0
 origional_movement_count_sixth=0
-origional_cloth_location=bpy.data.objects['Cloth_2'].location[0] #0.32598134875297546
+origional_cloth_location=bpy.data.objects['Cloth_2'].location[1] #-0.06533010303974152
+
 
 def transform_obj_to_frame(layer, ground):
     depsgraph = bpy.context.evaluated_depsgraph_get()
@@ -240,30 +241,47 @@ def my_handler_rotation_forward(scene):
 
     global forward_rotation_count
     global origional_cloth_location
-    rotation_step=0.2
-    forward_location_step=0.2
+    rotation_step=0.1
+    forward_location_step=0.01
     rounds=3
-    paus=30
+    paus=5
     if bpy.context.scene.frame_current ==paus-1:
         bpy.ops.screen.animation_cancel()
         bpy.context.scene.frame_current = paus
         bpy.context.view_layer.update()
         print('start rendering now')
-        for frames in range(20,30,10):
+        for frames in range(0,5,5):
+            context = bpy.context
+            scene = context.scene
+            cloth_object = bpy.data.objects['Cloth_2']
             bpy.context.scene.frame_set(frames)
+            layer = bpy.context.view_layer
+            tmp_obj = transform_obj_to_frame(layer, cloth_object)
+            OGP_transform_matrix_global=get_OGP(tmp_obj)
+            bpy.data.objects.remove(bpy.data.objects['tmpGround'], do_unlink=True)
             for ob in bpy.context.scene.objects:
                 if ob.type == 'CAMERA':
-                    for energy in np.arange(0.2,0.6,0.2):
+                    for energy in np.arange(0.2,0.3,0.2):
                         bpy.data.lights['Sun'].energy=energy
                         print('energy',energy)
                         bpy.context.scene.camera = ob
-                        bpy.context.scene.render.filepath = './DataCollection/'+ '-forwardRotation'+str(forward_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[0])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
+                        bpy.context.scene.render.filepath = './DataCollection-RED/'+ '-forwardRotation'+str(forward_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
                         bpy.ops.render.render(use_viewport=False, write_still=True)
+                        dmap = get_depth()
+                        cv2.imwrite('./DataCollection-RED/'+ '-forwardRotation'+str(forward_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name+'depth.png', dmap * 255)
+                        OGP_transform_matrix_camera=np.matmul(np.linalg.inv(bpy.data.objects[ob.name].matrix_world),OGP_transform_matrix_global)
+                        #saved quarternions are x y z w
+                        r = R.from_matrix([[ OGP_transform_matrix_camera[0][0], OGP_transform_matrix_camera[1][0], OGP_transform_matrix_camera[2][0]],[OGP_transform_matrix_camera[0][1], OGP_transform_matrix_camera[1][1], OGP_transform_matrix_camera[2][1]],[OGP_transform_matrix_camera[0][2], OGP_transform_matrix_camera[1][2], OGP_transform_matrix_camera[2][2]]])
+                        quarternion_array=r.as_quat()
+                        rows = ['Image'+ './DataCollection-RED/'+ '-forwardRotation'+str(forward_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name, quarternion_array[0], quarternion_array[1], quarternion_array[2],quarternion_array[3],OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3]]
+                        with open('./DataCollection-RED/OGP_dataset_collection_RED.csv', 'a') as csvfile:
+                            csvwriter = csv.writer(csvfile)
+                            csvwriter.writerow(rows)
 
 
         bpy.context.scene.frame_set(0)
         if forward_rotation_count==rounds+1 :
-            origional_cloth_location=bpy.data.objects['Cloth_2'].location[0]
+            bpy.data.objects['Cloth_2'].location[1]=origional_cloth_location
             print('now start origional rotation'  )
             bpy.context.scene.frame_set(0)
             run_and_stop_animation_rotation_origional()
@@ -280,10 +298,10 @@ def my_handler_rotation_forward(scene):
             bpy.data.objects['Cloth_2'].rotation_euler[2]+=-(rotation_step*rounds)
             bpy.data.objects['hanger_Collision'].rotation_euler[2]+=-(rotation_step*rounds)
             bpy.data.objects['hanger_CollisionFree'].rotation_euler[2]+=-(rotation_step*rounds)
-            bpy.data.objects['Cloth_2'].location[0]+=forward_location_step
-            if bpy.data.objects['Cloth_2'].location[0] != origional_cloth_location:
+            bpy.data.objects['Cloth_2'].location[1]+=-forward_location_step
+            if abs(bpy.data.objects['Cloth_2'].location[1] - origional_cloth_location )>=0.0001:
                 forward_rotation_count=0
-            elif bpy.data.objects['Cloth_2'].location[0] == origional_cloth_location:
+            else:
                 forward_rotation_count=rounds+1
 
 
@@ -307,32 +325,50 @@ def my_handler_rotation_backward(scene):
 
     global backward_rotation_count
     global origional_cloth_location
-    rotation_step=0.2
+    rotation_step=0.1
+    backward_location_step=0.01
     rounds=3
-    paus=50
+    paus=10
     if bpy.context.scene.frame_current ==paus-1:
         bpy.ops.screen.animation_cancel()
         bpy.context.scene.frame_current = paus
         bpy.context.view_layer.update()
         print('start rendering now')
-        for frames in range(20,30,10):
+        for frames in range(0,5,5):
+            context = bpy.context
+            scene = context.scene
+            cloth_object = bpy.data.objects['Cloth_2']
             bpy.context.scene.frame_set(frames)
+            layer = bpy.context.view_layer
+            tmp_obj = transform_obj_to_frame(layer, cloth_object)
+            OGP_transform_matrix_global=get_OGP(tmp_obj)
+            bpy.data.objects.remove(bpy.data.objects['tmpGround'], do_unlink=True)
             for ob in bpy.context.scene.objects:
                 if ob.type == 'CAMERA':
-                    for energy in np.arange(0.2,0.6,0.2):
+                    for energy in np.arange(0.2,0.3,0.2):
                         bpy.data.lights['Sun'].energy=energy
                         print('energy',energy)
                         bpy.context.scene.camera = ob
-                        bpy.context.scene.render.filepath = './DataCollection/'+ '-backwardRotation'+str(backward_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[0])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
+                        bpy.context.scene.render.filepath = './DataCollection-RED/'+ '-backwardRotation'+str(backward_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
                         bpy.ops.render.render(use_viewport=False, write_still=True)
+                        dmap = get_depth()
+                        cv2.imwrite( './DataCollection-RED/'+ '-backwardRotation'+str(backward_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name+'depth.png', dmap * 255)
+                        OGP_transform_matrix_camera=np.matmul(np.linalg.inv(bpy.data.objects[ob.name].matrix_world),OGP_transform_matrix_global)
+                        #saved quarternions are x y z w
+                        r = R.from_matrix([[ OGP_transform_matrix_camera[0][0], OGP_transform_matrix_camera[1][0], OGP_transform_matrix_camera[2][0]],[OGP_transform_matrix_camera[0][1], OGP_transform_matrix_camera[1][1], OGP_transform_matrix_camera[2][1]],[OGP_transform_matrix_camera[0][2], OGP_transform_matrix_camera[1][2], OGP_transform_matrix_camera[2][2]]])
+                        quarternion_array=r.as_quat()
+                        rows = ['Image'+ '-backwardRotation'+str(backward_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name, quarternion_array[0], quarternion_array[1], quarternion_array[2],quarternion_array[3],OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3]]
+                        with open('./DataCollection-RED/OGP_dataset_collection_RED.csv', 'a') as csvfile:
+                            csvwriter = csv.writer(csvfile)
+                            csvwriter.writerow(rows)
 
 
         bpy.context.scene.frame_set(0)
         if backward_rotation_count==rounds+1 :
-            origional_cloth_location=bpy.data.objects['Cloth_2'].location[0]
+            bpy.data.objects['Cloth_2'].location[1]=origional_cloth_location
             print('now start backward rotaion'  )
             bpy.context.scene.frame_set(0)
-            bpy.data.objects['Cloth_2'].location[0]+=-0.6
+            bpy.data.objects['Cloth_2'].location[1]+=0.03
             run_and_stop_animation_rotation_forward()
 
         if backward_rotation_count<rounds:
@@ -347,9 +383,10 @@ def my_handler_rotation_backward(scene):
             bpy.data.objects['Cloth_2'].rotation_euler[2]+=(rotation_step*rounds)
             bpy.data.objects['hanger_Collision'].rotation_euler[2]+=(rotation_step*rounds)
             bpy.data.objects['hanger_CollisionFree'].rotation_euler[2]+=(rotation_step*rounds)
-            if bpy.data.objects['Cloth_2'].location[0] != origional_cloth_location:
+            bpy.data.objects['Cloth_2'].location[1]+=-backward_location_step
+            if abs(bpy.data.objects['Cloth_2'].location[1] - origional_cloth_location )>=0.0001:
                 backward_rotation_count=0
-            elif bpy.data.objects['Cloth_2'].location[0] == origional_cloth_location:
+            else:
                 backward_rotation_count=rounds+1
 
 
@@ -371,34 +408,51 @@ def my_handler_rotation_back(scene):
 
     global back_rotation_count
     global origional_cloth_location
-    rotation_step=0.2
-    back_location_step=0.2
+    rotation_step=0.1
+    back_location_step=0.01
     rounds=3
-    paus=30
+    paus=5
     if bpy.context.scene.frame_current ==paus-1:
         bpy.ops.screen.animation_cancel()
         bpy.context.scene.frame_current = paus
         bpy.context.view_layer.update()
         print('start rendering now')
-        for frames in range(20,30,10):
+        for frames in range(0,5,5):
+            context = bpy.context
+            scene = context.scene
+            cloth_object = bpy.data.objects['Cloth_2']
             bpy.context.scene.frame_set(frames)
+            layer = bpy.context.view_layer
+            tmp_obj = transform_obj_to_frame(layer, cloth_object)
+            OGP_transform_matrix_global=get_OGP(tmp_obj)
+            bpy.data.objects.remove(bpy.data.objects['tmpGround'], do_unlink=True)
             for ob in bpy.context.scene.objects:
                 if ob.type == 'CAMERA':
-                    for energy in np.arange(0.2,0.6,0.2):
+                    for energy in np.arange(0.2,0.3,0.2):
                         bpy.data.lights['Sun'].energy=energy
                         print('energy',energy)
                         bpy.context.scene.camera = ob
-                        bpy.context.scene.render.filepath = './DataCollection/'+ '-backRotation'+str(back_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[0])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
+                        bpy.context.scene.render.filepath = './DataCollection-RED/'+ '-backRotation'+str(back_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
                         bpy.ops.render.render(use_viewport=False, write_still=True)
+                        dmap = get_depth()
+                        cv2.imwrite('./DataCollection-RED/'+ '-backRotation'+str(back_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name+'depth.png', dmap * 255)
+                        OGP_transform_matrix_camera=np.matmul(np.linalg.inv(bpy.data.objects[ob.name].matrix_world),OGP_transform_matrix_global)
+                        #saved quarternions are x y z w
+                        r = R.from_matrix([[ OGP_transform_matrix_camera[0][0], OGP_transform_matrix_camera[1][0], OGP_transform_matrix_camera[2][0]],[OGP_transform_matrix_camera[0][1], OGP_transform_matrix_camera[1][1], OGP_transform_matrix_camera[2][1]],[OGP_transform_matrix_camera[0][2], OGP_transform_matrix_camera[1][2], OGP_transform_matrix_camera[2][2]]])
+                        quarternion_array=r.as_quat()
+                        rows = ['Image'+ '-backRotation'+str(back_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name, quarternion_array[0], quarternion_array[1], quarternion_array[2],quarternion_array[3],OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3]]
+                        with open('./DataCollection-RED/OGP_dataset_collection_RED.csv', 'a') as csvfile:
+                            csvwriter = csv.writer(csvfile)
+                            csvwriter.writerow(rows)
 
 
         bpy.context.scene.frame_set(0)
         if back_rotation_count==rounds+1 :
-            origional_cloth_location=bpy.data.objects['Cloth_2'].location[0]
-            print('now start back rotaion'  )
+            bpy.data.objects['Cloth_2'].location[1]=origional_cloth_location
+            print('now start backward rotation'  )
             bpy.context.scene.frame_set(0)
+            bpy.data.objects['Cloth_2'].location[1]+=0.03
             #this stupid backward started collisions so basically no need to slide the cloth on the hanger, simply rotate it on origional location[0]
-            bpy.data.objects['Cloth_2'].location[0]=origional_cloth_location
             run_and_stop_animation_rotation_backward()
 
 
@@ -414,10 +468,10 @@ def my_handler_rotation_back(scene):
             bpy.data.objects['Cloth_2'].rotation_euler[0]+=(rotation_step*rounds)
             bpy.data.objects['hanger_Collision'].rotation_euler[0]+=(rotation_step*rounds)
             bpy.data.objects['hanger_CollisionFree'].rotation_euler[0]+=(rotation_step*rounds)
-            bpy.data.objects['Cloth_2'].location[0]+=back_location_step
-            if bpy.data.objects['Cloth_2'].location[0] != origional_cloth_location:
+            bpy.data.objects['Cloth_2'].location[1]+=-back_location_step
+            if abs(bpy.data.objects['Cloth_2'].location[1] - origional_cloth_location )>=0.0001:
                 back_rotation_count=0
-            elif bpy.data.objects['Cloth_2'].location[0] == origional_cloth_location:
+            else:
                 back_rotation_count=rounds+1
 
 
@@ -438,34 +492,52 @@ def my_handler_rotation_front(scene):
 
     global front_rotation_count
     global origional_cloth_location
-    rotation_step=0.2
-    front_location_step=0.2
+    rotation_step=0.1
+    front_location_step=0.01
     rounds=3
-    paus=30
+    paus=10
     if bpy.context.scene.frame_current ==paus-1:
         bpy.ops.screen.animation_cancel()
         bpy.context.scene.frame_current = paus
         bpy.context.view_layer.update()
         print('start rendering now')
-        for frames in range(20,30,10):
+        for frames in range(0,5,5):
+            context = bpy.context
+            scene = context.scene
+            cloth_object = bpy.data.objects['Cloth_2']
             bpy.context.scene.frame_set(frames)
+            layer = bpy.context.view_layer
+            tmp_obj = transform_obj_to_frame(layer, cloth_object)
+            OGP_transform_matrix_global=get_OGP(tmp_obj)
+            bpy.data.objects.remove(bpy.data.objects['tmpGround'], do_unlink=True)
             for ob in bpy.context.scene.objects:
                 if ob.type == 'CAMERA':
-                    for energy in np.arange(0.2,0.6,0.2):
+                    for energy in np.arange(0.2,0.3,0.2):
                         bpy.data.lights['Sun'].energy=energy
                         print('energy',energy)
                         bpy.context.scene.camera = ob
-                        bpy.context.scene.render.filepath = './DataCollection/'+ '-frontRotation'+str(front_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[0])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
+                        bpy.context.scene.render.filepath = './DataCollection-RED/'+ '-frontRotation'+str(front_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
                         bpy.ops.render.render(use_viewport=False, write_still=True)
+                        dmap = get_depth()
+                        cv2.imwrite('./DataCollection-RED/'+ '-frontRotation'+str(front_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name+'depth.png', dmap * 255)
+                        OGP_transform_matrix_camera=np.matmul(np.linalg.inv(bpy.data.objects[ob.name].matrix_world),OGP_transform_matrix_global)
+                        #saved quarternions are x y z w
+                        r = R.from_matrix([[ OGP_transform_matrix_camera[0][0], OGP_transform_matrix_camera[1][0], OGP_transform_matrix_camera[2][0]],[OGP_transform_matrix_camera[0][1], OGP_transform_matrix_camera[1][1], OGP_transform_matrix_camera[2][1]],[OGP_transform_matrix_camera[0][2], OGP_transform_matrix_camera[1][2], OGP_transform_matrix_camera[2][2]]])
+                        quarternion_array=r.as_quat()
+                        rows = ['Image'+ '-frontRotation'+str(front_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name, quarternion_array[0], quarternion_array[1], quarternion_array[2],quarternion_array[3],OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3]]
+                        with open('./DataCollection-RED/OGP_dataset_collection_RED.csv', 'a') as csvfile:
+                            csvwriter = csv.writer(csvfile)
+                            csvwriter.writerow(rows)
 
 
-        bpy.context.scene.frame_set(0)
         if front_rotation_count==rounds+1 :
-            origional_cloth_location=bpy.data.objects['Cloth_2'].location[0]
-            print('now start back rotaion'  )
+            #origional_cloth_location=bpy.data.objects['Cloth_2'].location[1]
+            bpy.data.objects['Cloth_2'].location[1]=origional_cloth_location
+            print('now start back rotation'  )
             bpy.context.scene.frame_set(0)
-            bpy.data.objects['Cloth_2'].location[0]+=-0.6
+            bpy.data.objects['Cloth_2'].location[1]+=0.03
             run_and_stop_animation_rotation_back()
+        bpy.context.scene.frame_set(0)
         if front_rotation_count<rounds:
             print('changing')
             bpy.data.objects['Cloth_2'].rotation_euler[0]+=rotation_step
@@ -478,10 +550,10 @@ def my_handler_rotation_front(scene):
             bpy.data.objects['Cloth_2'].rotation_euler[0]+=-(rotation_step*rounds)
             bpy.data.objects['hanger_Collision'].rotation_euler[0]+=-(rotation_step*rounds)
             bpy.data.objects['hanger_CollisionFree'].rotation_euler[0]+=-(rotation_step*rounds)
-            bpy.data.objects['Cloth_2'].location[0]+=front_location_step
-            if bpy.data.objects['Cloth_2'].location[0] != origional_cloth_location:
+            bpy.data.objects['Cloth_2'].location[1]+=-front_location_step
+            if abs(bpy.data.objects['Cloth_2'].location[1] - origional_cloth_location )>=0.0001:
                 front_rotation_count=0
-            elif bpy.data.objects['Cloth_2'].location[0] == origional_cloth_location:
+            else:
                 front_rotation_count=rounds+1
 
 
@@ -502,32 +574,50 @@ def run_and_stop_animation_rotation_front():
 def my_handler_rotation_left(scene):
     global origional_cloth_location
     global left_rotation_count
-    rotation_step=0.2
-    left_location_step=0.1
+    rotation_step=0.1
+    left_location_step=0.01
     rounds=3
-    paus=30
+    paus=5
     if bpy.context.scene.frame_current ==paus-1:
         bpy.ops.screen.animation_cancel()
         bpy.context.scene.frame_current = paus
         bpy.context.view_layer.update()
         print('start rendering now')
-        for frames in range(10,20,10):
+        for frames in range(0,5,5):
+            context = bpy.context
+            scene = context.scene
+            cloth_object = bpy.data.objects['Cloth_2']
             bpy.context.scene.frame_set(frames)
+            layer = bpy.context.view_layer
+            tmp_obj = transform_obj_to_frame(layer, cloth_object)
+            OGP_transform_matrix_global=get_OGP(tmp_obj)
+            bpy.data.objects.remove(bpy.data.objects['tmpGround'], do_unlink=True)
             for ob in bpy.context.scene.objects:
                 if ob.type == 'CAMERA':
-                    for energy in np.arange(0.2,0.6,0.2):
+                    for energy in np.arange(0.2,0.3,0.2):
                         bpy.data.lights['Sun'].energy=energy
                         print('energy',energy)
                         bpy.context.scene.camera = ob
-                        bpy.context.scene.render.filepath = './DataCollection/'+ '-leftRotation'+str(left_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[0])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
+                        bpy.context.scene.render.filepath = './DataCollection-RED/'+ '-leftRotation'+str(left_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
                         bpy.ops.render.render(use_viewport=False, write_still=True)
+                        dmap = get_depth()
+                        cv2.imwrite('./DataCollection-RED/'+ '-leftRotation'+str(left_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name+'depth.png', dmap * 255)
+                        OGP_transform_matrix_camera=np.matmul(np.linalg.inv(bpy.data.objects[ob.name].matrix_world),OGP_transform_matrix_global)
+                        #saved quarternions are x y z w
+                        r = R.from_matrix([[ OGP_transform_matrix_camera[0][0], OGP_transform_matrix_camera[1][0], OGP_transform_matrix_camera[2][0]],[OGP_transform_matrix_camera[0][1], OGP_transform_matrix_camera[1][1], OGP_transform_matrix_camera[2][1]],[OGP_transform_matrix_camera[0][2], OGP_transform_matrix_camera[1][2], OGP_transform_matrix_camera[2][2]]])
+                        quarternion_array=r.as_quat()
+                        rows = ['Image'+ '-leftRotation'+str(left_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name, quarternion_array[0], quarternion_array[1], quarternion_array[2],quarternion_array[3],OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3]]
+                        with open('./DataCollection-RED/OGP_dataset_collection_RED.csv', 'a') as csvfile:
+                            csvwriter = csv.writer(csvfile)
+                            csvwriter.writerow(rows)
+
 
         bpy.context.scene.frame_set(0)
         if left_rotation_count==rounds+1 :
-            origional_cloth_location=bpy.data.objects['Cloth_2'].location[0]
-            print('now start front rotaion'  )
+            origional_cloth_location=bpy.data.objects['Cloth_2'].location[1]
+            print('now start front rotation'  )
             bpy.context.scene.frame_set(0)
-            bpy.data.objects['Cloth_2'].location[0]+=-0.6
+            bpy.data.objects['Cloth_2'].location[1]+=0.03
             run_and_stop_animation_rotation_front()
         if left_rotation_count<rounds:
             print('changing')
@@ -541,10 +631,10 @@ def my_handler_rotation_left(scene):
             bpy.data.objects['Cloth_2'].rotation_euler[1]+=(rotation_step*rounds)
             bpy.data.objects['hanger_Collision'].rotation_euler[1]+=(rotation_step*rounds)
             bpy.data.objects['hanger_CollisionFree'].rotation_euler[1]+=(rotation_step*rounds)
-            bpy.data.objects['Cloth_2'].location[0]+=left_location_step
-            if bpy.data.objects['Cloth_2'].location[0] != origional_cloth_location:
+            bpy.data.objects['Cloth_2'].location[1]+=-left_location_step
+            if abs(bpy.data.objects['Cloth_2'].location[1] - origional_cloth_location )>=0.0001:
                 left_rotation_count=0
-            elif bpy.data.objects['Cloth_2'].location[0] == origional_cloth_location:
+            else:
                 left_rotation_count=rounds+1
 
 
@@ -568,35 +658,51 @@ def my_handler_rotation_right(scene):
     global Right_rotation_count
     global origional_cloth_location
 
-    rotation_step=0.2
-    right_location_step=0.2
+    rotation_step=0.1
+    right_location_step=0.01
     rounds=3
-    paus=30
+    paus=10
     if bpy.context.scene.frame_current ==paus-1:
         bpy.ops.screen.animation_cancel()
         bpy.context.scene.frame_current = paus
         bpy.context.view_layer.update()
         print('start rendering now')
-        for frames in range(20,30,10):
+        for frames in range(0,5,5):
+            context = bpy.context
+            scene = context.scene
+            cloth_object = bpy.data.objects['Cloth_2']
             bpy.context.scene.frame_set(frames)
+            layer = bpy.context.view_layer
+            tmp_obj = transform_obj_to_frame(layer, cloth_object)
+            OGP_transform_matrix_global=get_OGP(tmp_obj)
+            bpy.data.objects.remove(bpy.data.objects['tmpGround'], do_unlink=True)
             for ob in bpy.context.scene.objects:
                 if ob.type == 'CAMERA':
-                    for energy in np.arange(0.2,0.6,0.2):
+                    for energy in np.arange(0.2,0.3,0.2):
                         bpy.data.lights['Sun'].energy=energy
                         print('energy',energy)
                         bpy.context.scene.camera = ob
-                        bpy.context.scene.render.filepath = './DataCollection/'+ '-RightRotation'+str(Right_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[0])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
+                        bpy.context.scene.render.filepath = './DataCollection-RED/'+ '-RightRotation'+str(Right_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
                         bpy.ops.render.render(use_viewport=False, write_still=True)
-
+                        dmap = get_depth()
+                        cv2.imwrite('./DataCollection-RED/'+ '-RightRotation'+str(Right_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name+'depth.png', dmap * 255)
+                        OGP_transform_matrix_camera=np.matmul(np.linalg.inv(bpy.data.objects[ob.name].matrix_world),OGP_transform_matrix_global)
+                        #saved quarternions are x y z w
+                        r = R.from_matrix([[ OGP_transform_matrix_camera[0][0], OGP_transform_matrix_camera[1][0], OGP_transform_matrix_camera[2][0]],[OGP_transform_matrix_camera[0][1], OGP_transform_matrix_camera[1][1], OGP_transform_matrix_camera[2][1]],[OGP_transform_matrix_camera[0][2], OGP_transform_matrix_camera[1][2], OGP_transform_matrix_camera[2][2]]])
+                        quarternion_array=r.as_quat()
+                        rows = ['Image'+ '-RightRotation'+str(Right_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name, quarternion_array[0], quarternion_array[1], quarternion_array[2],quarternion_array[3],OGP_transform_matrix_camera[0][3], OGP_transform_matrix_camera[1][3], OGP_transform_matrix_camera[2][3]]
+                        with open('./DataCollection-RED/OGP_dataset_collection_RED.csv', 'a') as csvfile:
+                            csvwriter = csv.writer(csvfile)
+                            csvwriter.writerow(rows)
 
 
         if Right_rotation_count==rounds+1 :
-            origional_cloth_location=bpy.data.objects['Cloth_2'].location[0]
+            origional_cloth_location=bpy.data.objects['Cloth_2'].location[1]
             print('now start left rotaion'  )
-            bpy.context.scene.frame_set(start_frame)
-            #bpy.data.objects['Cloth_2'].location[0]+=-0.3
-            #run_and_stop_animation_rotation_left()
-        bpy.context.scene.frame_set(start_frame)
+            bpy.context.scene.frame_set(0)
+            bpy.data.objects['Cloth_2'].location[1]+=0.03
+            run_and_stop_animation_rotation_left()
+        bpy.context.scene.frame_set(0)
         if Right_rotation_count<rounds:
             print('changing')
             bpy.data.objects['Cloth_2'].rotation_euler[1]+=rotation_step
@@ -609,10 +715,10 @@ def my_handler_rotation_right(scene):
             bpy.data.objects['Cloth_2'].rotation_euler[1]+=-(rotation_step*rounds)
             bpy.data.objects['hanger_Collision'].rotation_euler[1]+=-(rotation_step*rounds)
             bpy.data.objects['hanger_CollisionFree'].rotation_euler[1]+=-(rotation_step*rounds)
-            bpy.data.objects['Cloth_2'].location[0]+=right_location_step
-            if bpy.data.objects['Cloth_2'].location[0] != origional_cloth_location:
+            bpy.data.objects['Cloth_2'].location[1]+=-right_location_step
+            if abs(bpy.data.objects['Cloth_2'].location[1] - origional_cloth_location )>=0.0001:
                 Right_rotation_count=0
-            elif bpy.data.objects['Cloth_2'].location[0] == origional_cloth_location:
+            else:
                 Right_rotation_count=rounds+1
 
 
@@ -630,12 +736,13 @@ def run_and_stop_animation_rotation_right():
 
 
 
-global start_frame
-start_frame=10
 
+print(origional_cloth_location)
 print('start'+str(bpy.context.scene.frame_current)    )
-bpy.context.scene.frame_set(start_frame)
-#bpy.data.objects['Cloth_2'].location[0]+=-0.6 #location_step*rounds
-run_and_stop_animation_rotation_origional()
-#run_and_stop_animation_rotation_right()
+bpy.context.scene.frame_set(0)
+bpy.data.objects['Cloth_2'].location[1]+=0.03 #location_step*rounds
+#run_and_stop_animation_rotation_origional()
+run_and_stop_animation_rotation_right()
+#bpy.data.objects['Cloth_2'].location[1]+=0.04
+#run_and_stop_animation_rotation_front()
 #run_and_stop_animation_rotation_backward()
