@@ -683,7 +683,7 @@ def my_handler_rotation_right(scene):
                         print('energy',energy)
                         bpy.context.scene.camera = ob
                         bpy.context.scene.render.filepath = './DataCollection-REDfirst/'+ '-RightRotation'+str(Right_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name
-                        #bpy.ops.render.render(use_viewport=False, write_still=True)
+                        bpy.ops.render.render(use_viewport=False, write_still=True)
                         dmap = get_depth()
                         cv2.imwrite('./DataCollection-REDfirst/'+ '-RightRotation'+str(Right_rotation_count*rotation_step)+'-location'+str(bpy.data.objects['Cloth_2'].location[1])+'-frame'+str(frames) + '-energy'+str(energy)+ob.name+'depth.png', dmap * 255)
                         OGP_transform_matrix_camera=np.matmul(np.linalg.inv(bpy.data.objects[ob.name].matrix_world),OGP_transform_matrix_global)
